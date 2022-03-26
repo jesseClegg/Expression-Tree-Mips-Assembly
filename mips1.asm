@@ -3,29 +3,35 @@
 	firstPrompt: .asciiz "enter an expression..."
 	newline: .asciiz "\n"
 	uEntered: .asciiz "you entered= \n"
+	testExpression: .asciiz "(1-(3+5))\n"
+	finishLine: .asciiz "\nfinish line!!!\n"
+	
 .text
 
 .globl main
 
 	main: 
-		li $v0, 4
-		la $a0, firstPrompt
-		syscall
+		#li $v0, 4
+		#la $a0, firstPrompt
+		#syscall
 		
 		#scan user input 
-		li $v0, 8 #8 for a string
-		la $a0, userInput #input will be stored to the address of userInput
-		li $a1, 10 #tell the system how many characters we are going to store
-		syscall 
+		#li $v0, 8 #8 for a string
+		#la $a0, userInput #input will be stored to the address of userInput
+		#li $a1, 10 #tell the system how many characters we are going to store
+		#syscall 
 		
 		#print "ypu entered..."
-		li $v0, 4
-		la $a0, uEntered
-		syscall
+		#li $v0, 4
+		#la $a0, uEntered
+		#syscall
 		
-		#prin the actual string
+		
+		
+		
+		#print the actual string
 		li $v0, 4 
-		la $a0, userInput
+		la $a0, testExpression
 		syscall
 		
 		#print newline
@@ -33,35 +39,47 @@
 		la $a0, newline
 		syscall
 		
-		
-		#put the string address into $t0
-		la $t0, userInput
-		
-		#get the first byte pointed to by the address
-		lb $t2, ($t0)
-		
-		#if the byte in $t2 is equalt to zero, loop ends
-		beqz $t2, end
-		
-	continue:
-		add $t0, 1	
+		#int i=0
+		addi $t0, $zero, 0
 	
+		#$t1=array.length	
+		addi $t1, $zero, 9			
+		sll $t1, $t1, 2 #multiply by 4
+	
+		#successfully loop 9 times
+		Loop:
+			beq $t0, $t1, breakLoop
+			addi, $t0, $t0, 4
+			
+			#print the actual string
+			li $v0, 4 
+			la $a0, testExpression
+			syscall
+
+			lw $t4, testExpression($t0)
+			addi $a0, $t4, $zero
+
+			li $v0, 1
+			syscall
+
+
+
+		j Loop
+
+	breakLoop:
+			
+
+
+
+	#print finish line
+	li $v0, 4 
+	la $a0, finishLine
+	syscall
 		
-
-
-
-
-
-
-
-
-
-
-
-		end:
-		# code for exit
-		li $v0, 10 
-		syscall	
+	end:
+	# code for exit
+	li $v0, 10 
+	syscall	
 	
 				
 	
