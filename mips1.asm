@@ -9,7 +9,7 @@ stackIsEmptyMessage: .asciiz " stack is empty"
 stickIsNotEmpty: .asciiz " stack is NOT empty"
 beingAppended: .asciiz " is being appended "
 newline: .asciiz "\n"
-currentPostfix: .asciiz "current expression: "
+postfixExpressionMessage: .asciiz "postfix expression: "
 firstPrompt: .asciiz "enter an expression: \n"
 isThree: .asciiz "its a three!!!   "
 isOperator: .asciiz " is an operator"
@@ -23,10 +23,12 @@ sizeOf: .asciiz "expression has size of : "
 plusSign: .byte '+'
 minusSign: .byte '-'
 emptyStackSentinel: .word 'E'
-finishLine: .asciiz "finish line woo!\n"
+finishLine: .asciiz "finish line woo!"
 	.text
 	.globl main
 main:
+
+ScanUserinput:
 	#clear some registers
 	#will use $s0 as an index for appending to string
 	addi $s0, $zero, 0
@@ -67,26 +69,26 @@ parseExpression:
 	li	$t5, 13
 	
 	#checking if 13 is ascii for newline
-	li	$v0, 11			
-	move	$a0, $t5		
-	syscall
+	#li	$v0, 11			
+	#move	$a0, $t5		
+	#syscall
 	
 	parserLoop:
 		# $t3 is i=0
 		add	$t3, $t2, $t0		# $t2 is the base address for our 'input' array, add loop index
 		lb	$t4, 0($t3)		# load a byte at a time according to counter								
-		beqz	$t4, exit		# We found the end of the expression (null-byte)
+		beqz	$t4, AfterParseLoop		# We found the end of the expression (null-byte)
 		
 		#just prints each character for right now $t4
-		li $v0, 11
-		move $a0, $t4
-		syscall	
+		#li $v0, 11
+		#move $a0, $t4
+		#syscall	
 		
 		beq $t4, '+' isPlusOrMinus
 		beq $t4, '-' isPlusOrMinus
 		beq $t4, '(' openParen
 		beq $t4, ')' closedParen
-		beq $t4, $t5 loopWork
+		#beq $t4, $t5 loopWork
 		beq $t4, '0' isNumber
 		beq $t4, '1' isNumber
 		beq $t4, '2' isNumber
@@ -102,12 +104,12 @@ parseExpression:
 		isNumber:
 			
 			#confirms is number message
-			li	$v0, 4			
-			la	$a0, isNumberMessage
-			syscall	  
-			li	$v0, 4			
-			la	$a0, newline 
-			syscall	    
+			#li	$v0, 4			
+			#la	$a0, isNumberMessage
+			#syscall	  
+			#li	$v0, 4			
+			#la	$a0, newline 
+			#syscall	    
 			
 			#append to post fix
 			addi $a0, $zero, 0
@@ -120,12 +122,12 @@ parseExpression:
 		isPlusOrMinus:
 			
 			#confirms is operator message
-		      	li	$v0, 4			
-			la	$a0, isOperator
-			syscall	
-			li	$v0, 4			
-			la	$a0, newline 
-			syscall	
+		      	#li	$v0, 4			
+			#la	$a0, isOperator
+			#syscall	
+			#li	$v0, 4			
+			#la	$a0, newline 
+			#syscall	
 			
 			#clear $s3, stores stack empty boolean 
 			addi $s3, $zero, 0
@@ -133,17 +135,18 @@ parseExpression:
 			move $s3, $v0
 			
 			# Print stack empty boolean
-			li	$v0, 11			
-			move	$a0, $s3		
-			syscall
+			#li	$v0, 11			
+			#move	$a0, $s3		
+			#syscall
 				
-				beq $s3, 1 wasEmpty
-					#if stack is not empty, pop from stack, and append to postfix until empty or '('
+				#if stack is not empty, pop from stack, and append to postfix until empty or '('
+				beq $s3, 1 wasEmpty	
 					
 					addi $t6, $zero, 0
 					jal stackPeek
 					move $t6, $v0
 					
+					#top of the stack is peeked into $t6
 					beq $t6, '(' wasEmpty
 					
 						jal stackPop
@@ -165,27 +168,27 @@ parseExpression:
 		openParen:
 		 	
 		 	#conmfirms is open Paren message
-		 	li	$v0, 4			
-			la	$a0, isOpenParen
-			syscall	
+		 	#li	$v0, 4			
+			#la	$a0, isOpenParen
+			#syscall	
 			
-			#push openig paren onto the stack
+			#push opening paren onto the stack
 			addi $a0, $zero, 0
 			move $a0, $t4
 			jal stackPush
 			
-				addi $t6, $zero, 0
-				jal stackPeek
-				move $t6, $v0
+				#addi $t6, $zero, 0
+				#jal stackPeek
+				#move $t6, $v0
 				
 				#print current result of stack.peek()
-				li	$v0, 11			
-				move	$a0, $t6			
-				syscall
+				#li	$v0, 11			
+				#move	$a0, $t6			
+				#syscall
 				
-				li	$v0, 4			
-				la	$a0, newline 
-				syscall	
+				#li	$v0, 4			
+				#la	$a0, newline 
+				#syscall	
 				
 			
 			j loopWork
@@ -193,8 +196,8 @@ parseExpression:
 		 closedParen:
 		 	
 		 	#conmfirms is closed Paren message
-			li	$v0, 4			
-			la	$a0, isClosedParen 
+			#li	$v0, 4			
+			#la	$a0, isClosedParen 
 			
 			parenLoop:	
 				#pop everything from stack until a closed parenthesis
@@ -204,9 +207,9 @@ parseExpression:
 				move $t6, $v0
 				
 				#print current result of stack.peek()
-				li	$v0, 11			
-				move	$a0, $t6		
-				syscall
+				#li	$v0, 11			
+				#move	$a0, $t6		
+				#syscall
 				
 					beq $t6, '(' matchingParen
 						addi $t8, $zero, 0
@@ -228,47 +231,47 @@ parseExpression:
 				#pop it to get rid of the '('
 				jal stackPop
 			
-				li	$v0, 4			
-				la	$a0, newline 
-				syscall	
+				#li	$v0, 4			
+				#la	$a0, newline 
+				#syscall	
 			 
-				li $v0, 11
-				move $a0, $t8
-				syscall	
+				#li $v0, 11
+				#move $a0, $t8
+				#syscall	
 				
 				j loopWork
 		
 		
 	loopWork:
-		li	$v0, 4			
-		la	$a0, newline 
-		syscall
+		#li	$v0, 4			
+		#la	$a0, newline 
+		#syscall
 		
-		li	$v0, 4			
-		la	$a0, currentPostfix 
-		syscall
+		#li	$v0, 4			
+		#la	$a0, postfixExpressionMessage
+		#syscall
 		
 		
-		li, $v0, 4
-		la $a0, outputExpression
-		syscall
+		#li, $v0, 4
+		#la $a0, outputExpression
+		#syscall
 		
-		li	$v0, 4			
-		la	$a0, newline 
-		syscall
+		#li	$v0, 4			
+		#la	$a0, newline 
+		#syscall
 		
 		addi	$t0, $t0, 1		# Advance our counter (i++)
 		j	parserLoop		# Loop until we reach our condition
 	
 
 
-exit:
-	#RENEMBER TO EMPTY THE STACK HERE!
+AfterParseLoop:
+	#pop any remaining operators on the stock and append to postfix expression
 	emptyTheStack:
 		
-		li	$v0, 4			
-		la	$a0, isThree		
-		syscall
+		#li	$v0, 4			
+		#la	$a0, isThree		
+		#syscall
 		
 		addi $s3, $zero, 0
 		jal stackIsEmpty
@@ -276,69 +279,103 @@ exit:
 		
 		beq $s3, 1 stackIsEmptied		
 		
-		jal stackPop
-		addi $t9, $zero, 0
-		addi $t9, $v0, 0
+			jal stackPop
+			addi $t9, $zero, 0
+			addi $t9, $v0, 0
 		
-		li	$v0, 11			
-		move	$a0, $t9 
-		syscall
+		#	li	$v0, 11			
+		#	move	$a0, $t9 
+		#	syscall
 		
-		li	$v0, 4			
-		la	$a0, newline 
-		syscall
+		#	li	$v0, 4			
+		#	la	$a0, newline 
+		#	syscall
 		
-		sb $t9, outputExpression($s0)
-		addi $s0, $s0, 1
-		j emptyTheStack		 
+			sb $t9, outputExpression($s0)
+			addi $s0, $s0, 1
+			j emptyTheStack		 
 
 
 	stackIsEmptied:
 	
-		li	$v0, 4			
-		la	$a0, newline 
-		syscall	
 		
-		li	$v0, 4			
-		la	$a0, finishLine		
-		syscall
-
-		li, $v0, 4
-		la $a0, outputExpression
-		syscall
-	
-		li	$v0, 4			
-		la	$a0, newline 
-		syscall	
 	
 		addi $t9, $zero, 0
 		addi $t9, $zero, 7
 		sb $t9, outputExpression($s0)
 		addi $s0, $s0, 1
 		
+		
+		
+		
+PrintPostFixExpression:
+		
+		#print postfix message
+		li	$v0, 4			
+		la	$a0, postfixExpressionMessage 
+		syscall
+		
+		#print the postfix expression	
 		li, $v0, 4
 		la $a0, outputExpression
 		syscall
 	
-		li	$v0, 10			# exit()
-		syscall
+EvaluateExpression:	
 	
+	
+	
+	
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+EndOfProgram:	
+		#newline
+		li	$v0, 4			
+		la	$a0, newline 
+		syscall	
+		
+		#finish line
+		li	$v0, 4			
+		la	$a0, finishLine		
+		syscall
+		
+		# exit()
+		li	$v0, 10			
+		syscall
+#####################################################################################################################	
 stackPush:
 	addi $sp, $sp, -4
 	sw $a0, 0($sp) #push to stack
 	
-	move $t8, $a0
-	li	$v0, 4			
-	la	$a0, newline 
-	syscall	
+	#move $t8, $a0
+	#li	$v0, 4			
+	#la	$a0, newline 
+	#syscall	
 	
-	li $v0, 11
-	move $a0, $t8
-	syscall
+	#li $v0, 11
+	#move $a0, $t8
+	#syscall
 	
-	li	$v0, 4			
-	la	$a0, pushingToStack 
-	syscall	
+	#li	$v0, 4			
+	#la	$a0, pushingToStack 
+	#syscall	
 	
 	jr $ra
 	
@@ -347,13 +384,13 @@ stackPop:
 	lw $t9, 0($sp)
 	addi $sp, $sp, 4
 	
-	li $v0, 11
-	move $a0, $t9
-	syscall
+	#li $v0, 11
+	#move $a0, $t9
+	#syscall
 	
-	li	$v0, 4			
-	la	$a0, poppingFromStack 
-	syscall
+	#li	$v0, 4			
+	#la	$a0, poppingFromStack 
+	#syscall
 	
 	#remember to return it in $v0 for use in main
 	move $v0, $t9
@@ -363,13 +400,13 @@ stackPeek:
 	addi $t9, $zero, 0
 	lw $t9, 0($sp)
 	
-	li $v0, 11
-	move $a0, $t9
-	syscall
+	#li $v0, 11
+	#move $a0, $t9
+	#syscall
 	
-	li	$v0, 4			
-	la	$a0, peakingFromStack  
-	syscall
+	#li	$v0, 4			
+	#la	$a0, peakingFromStack  
+	#syscall
 	
 	move $v0, $t9
 	jr $ra
@@ -380,25 +417,25 @@ stackIsEmpty:
 	
 	addi $t8, $zero, 0
 	lw $t8, emptyStackSentinel($zero)
-	beq $t9, $t8 empty
 	
-	addi $v0, $zero, 0
-	jr $ra
+	beq $t9, $t8 empty
+		addi $v0, $zero, 0
+		jr $ra
 	empty:
-	 addi $v0, $zero, 1
-	 jr $ra
+	 	addi $v0, $zero, 1
+	 	jr $ra
 	 
 appendToExpression:
 	addi $t9, $zero, 0
 	move $t9, $a0
 	sw $t9, outputExpression($s0)
 	
-	li $v0, 11
-	move $a0, $t9
-	syscall	
-	li	$v0, 4			
-	la	$a0, beingAppended 
-	syscall		
+	#li $v0, 11
+	#move $a0, $t9
+	#syscall	
+	#li	$v0, 4			
+	#la	$a0, beingAppended 
+	#syscall		
 	
 	#increment the index we are at for main	
 	addi $s0, $s0, 1
