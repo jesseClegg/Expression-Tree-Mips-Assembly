@@ -4,11 +4,12 @@ input:	.space	256
 outputExpression: .space 256
 pushingToStack: .asciiz " getting pushed to stack \n"
 poppingFromStack: .asciiz " is popped from stack \n"
-peakingFromStack: .asciiz " peeking from stack \n"
+peakingFromStack: .asciiz " peeking from stack"
 stackIsEmptyMessage: .asciiz " stack is empty"
 stickIsNotEmpty: .asciiz " stack is NOT empty"
 beingAppended: .asciiz " is being appended "
 newline: .asciiz "\n"
+currentPostfix: .asciiz "current expression: "
 firstPrompt: .asciiz "enter an expression: \n"
 isThree: .asciiz "its a three!!!   "
 isOperator: .asciiz " is an operator"
@@ -99,6 +100,8 @@ parseExpression:
 		j loopWork 
 		
 		isNumber:
+			
+			#confirms is number message
 			li	$v0, 4			
 			la	$a0, isNumberMessage
 			syscall	  
@@ -113,10 +116,10 @@ parseExpression:
 			addi $s0, $s0, 1
 	
 			j loopWork    
-		    
 		   
 		isPlusOrMinus:
-			    
+			
+			#confirms is operator message
 		      	li	$v0, 4			
 			la	$a0, isOperator
 			syscall	
@@ -124,54 +127,74 @@ parseExpression:
 			la	$a0, newline 
 			syscall	
 			
+			#clear $s3, stores stack empty boolean 
 			addi $s3, $zero, 0
-			
 			jal stackIsEmpty
 			move $s3, $v0
 			
-			li	$v0, 11			# Print
-			move	$a0, $s3		# the string!
+			# Print stack empty boolean
+			li	$v0, 11			
+			move	$a0, $s3		
 			syscall
-			
-			beq $s3, 1 wasEmpty
-				#pop from stack and append to postfix
-				jal stackPop
-				addi $a0, $zero, 0
-				addi $a0, $v0, 0
-				sb $a0, outputExpression($s0)
-				addi $s0, $s0, 1
+				
+				beq $s3, 1 wasEmpty
+					#if stack is not empty, pop from stack, and append to postfix until empty or '('
+					
+					addi $t6, $zero, 0
+					jal stackPeek
+					move $t6, $v0
+					
+					beq $t6, '(' wasEmpty
+					
+						jal stackPop
+						addi $a0, $zero, 0
+						addi $a0, $v0, 0
+					
+						sb $a0, outputExpression($s0)
+						addi $s0, $s0, 1
 				 
-				#j loopWork
-				j isPlusOrMinus
-			wasEmpty:
-				#put onto the stack if stack is empty!!
-				addi $a0, $zero, 0
-				move $a0, $t4
-				jal stackPush
-			
-				j loopWork
+					j isPlusOrMinus
+				wasEmpty:
+					#push operator onto the stack if stack is empty
+					addi $a0, $zero, 0
+					move $a0, $t4
+					jal stackPush
+				
+					j loopWork
 		 
 		openParen:
+		 	
+		 	#conmfirms is open Paren message
 		 	li	$v0, 4			
 			la	$a0, isOpenParen
 			syscall	
 			
-			
-			#push onto the stack
+			#push openig paren onto the stack
 			addi $a0, $zero, 0
 			move $a0, $t4
 			jal stackPush
+			
+				addi $t6, $zero, 0
+				jal stackPeek
+				move $t6, $v0
+				
+				#print current result of stack.peek()
+				li	$v0, 11			
+				move	$a0, $t6			
+				syscall
+				
+				li	$v0, 4			
+				la	$a0, newline 
+				syscall	
+				
 			
 			j loopWork
 		 	
 		 closedParen:
 		 	
+		 	#conmfirms is closed Paren message
 			li	$v0, 4			
 			la	$a0, isClosedParen 
-			syscall	
-			li	$v0, 4			
-			la	$a0, newline 
-			syscall	
 			
 			parenLoop:	
 				#pop everything from stack until a closed parenthesis
@@ -180,20 +203,27 @@ parseExpression:
 				jal stackPeek
 				move $t6, $v0
 				
-				beq $t6, '(' matchingParen
-				addi $t8, $zero, 0
-			
-				#should have whats popped from stack now
-				jal stackPop
-				move $t8, $v0
-			
-				#append to post fix
-				addi $a0, $zero, 0
-				addi $a0, $t8, 0
-				sb $t8, outputExpression($s0)
-				addi $s0, $s0, 1
+				#print current result of stack.peek()
+				li	$v0, 11			
+				move	$a0, $t6		
+				syscall
 				
-				j parenLoop
+					beq $t6, '(' matchingParen
+						addi $t8, $zero, 0
+			
+						#should have whats popped from stack now
+						addi $t8, $zero, 0
+						jal stackPop
+						move $t8, $v0
+			
+						#append to post fix
+						addi $a0, $zero, 0
+						addi $a0, $t8, 0
+						sb $t8, outputExpression($s0)
+						addi $s0, $s0, 1
+				
+					j parenLoop
+					
 			matchingParen:
 				#pop it to get rid of the '('
 				jal stackPop
@@ -213,6 +243,11 @@ parseExpression:
 		li	$v0, 4			
 		la	$a0, newline 
 		syscall
+		
+		li	$v0, 4			
+		la	$a0, currentPostfix 
+		syscall
+		
 		
 		li, $v0, 4
 		la $a0, outputExpression
