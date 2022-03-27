@@ -7,7 +7,7 @@ poppingFromStack: .asciiz " is popped from stack \n"
 peakingFromStack: .asciiz " peeking from stack \n"
 stackIsEmptyMessage: .asciiz " stack is empty\n"
 stickIsNotEmpty: .asciiz " stack is NOT empty\n"
-beingAppended: .asciiz " is being appended \n"
+beingAppended: .asciiz " is being appended "
 newline: .asciiz "\n"
 firstPrompt: .asciiz "enter an expression: \n"
 isThree: .asciiz "its a three\n!!! "
@@ -22,31 +22,21 @@ sizeOf: .asciiz "expression has size of : "
 plusSign: .byte '+'
 minusSign: .byte '-'
 emptyStackSentinel: .word 'E'
+finishLine: .asciiz "finish line woo!\n"
 	.text
 	.globl main
 main:
-	
-	add $t1, $zero, 0
-	lw $t1, emptyStackSentinel($zero)
-	
+	jal printPostFixExpression
 	#will use $s0 as an index for appending to string
 	addi $s0, $zero, 0
+	add $t1, $zero, 0
 	
+	#put our sentinel onto the stack for isEmpty()
+	lw $t1, emptyStackSentinel($zero)
 	addi $a0, $zero, 0
 	move $a0, $t1
-	jal stackPush
-	jal stackPeek  
-	
-	
-	addi $a0, $zero, 0
-	addi $a0, $zero, 7
-	jal appendToExpression
-	
-	addi $a0, $zero, 0
-	addi $a0, $zero, 9
-	jal appendToExpression
-	
-	jal printPostFixExpression
+	#jal stackPush
+	#jal stackPeek  
 	
 	li	$v0, 4			# output the initial prompt
 	la	$a0, firstPrompt
@@ -56,38 +46,27 @@ main:
 	la	$a0, input		#stored into input
 	li	$a1, 256		# max size=  256 chars/bytes 
 	syscall
-	
-	#li	$v0, 4			# output the expression
-	#la	$a0, input
-	#syscall
+
 	la $t2, input
 	
 	
 parseExpression:
 	li	$t0, 0			# Set t0 to zero to be sure
 	li	$t3, 0			# Set t3 to zero to be sure
-	li 	$t6, 0
+	li 	$t6, 0			# Set t6 to zero to be sure
 	
 	parserLoop:
 		# $t3 is i=0
 		add	$t3, $t2, $t0		# $t2 is the base address for our 'input' array, add loop index
-		lb	$t4, 0($t3)		# load a byte at a time according to counter
-										
+		lb	$t4, 0($t3)		# load a byte at a time according to counter								
 		beqz	$t4, exit		# We found the end of the expression (null-byte)
-		#sb	$t4, output($t1) could later re purpose this for stack use
 		
 		
 		#####THIS IS WHERE WE HAVE ACCESS TO THE CHARACTERS! $T4
-		
 		#just prints each character for right now
 		li $v0, 11
 		move $a0, $t4
-		syscall
-			
-		#prnt a newline	
-		#li	$v0, 4			
-		#la	$a0, newline 
-		#syscall	
+		syscall	
 		
 		beq $t4, '+' isPlusOrMinus
 		beq $t4, '-' isPlusOrMinus
@@ -103,13 +82,40 @@ parseExpression:
 			syscall	    
 			#append to post fix
 			
+			#addi $a0, $zero, 0
+			#addi $a0, $t4, 0
 			
-			#this whole segment adds one to the stack
+			#li $v0, 11
+			#move $a0, $t4
+			#syscall	
+			#move $a0, $t4
+		
+			
+			addi $a0, $zero, 0
+			addi $a0, $t4, 0
+			#sw $t4, outputExpression($s0)
+			#addi $s0, $s0, 4
+			jal appendToExpression
+			
+			#this whole segment adds one to the stack(NOT NEEDED ANYMORE)
 			#addi $a0, $zero, 0
 			#move $a0, $t4
 			#jal stackPush
+			li	$v0, 4			
+			la	$a0, newline 
+			syscall	 
 			
+			addi $s0, $s0, -4
+			addi $t6, $zero, 0
+			lw $t6, outputExpression($s0)
+			li $v0, 11
+			move $a0, $t6
+			syscall	
+			addi $s0, $s0, 4
 			
+			li	$v0, 4			
+			la	$a0, newline 
+			syscall	 
 			j loopWork    
 		    
 		   
@@ -179,25 +185,32 @@ parseExpression:
 exit:
 	
 	
+	
+	
 	li	$v0, 4			# Print
 	la	$a0, outputExpression		# the string!
 	syscall
+	
+	jal printPostFixExpression
 	
 	li	$v0, 4			
 	la	$a0, newline 
 	syscall	
 	
-	jal stackPeek
-	jal stackPop	
-	jal stackPeek
-	jal stackPop	
-	jal stackPop
-	jal stackPop
-	jal stackPeek
-	jal stackPeek
-	jal stackPop
-	jal stackPeek
-	jal stackPop
+	li	$v0, 4			# Print
+	la	$a0, finishLine		# the string!
+	syscall
+	#jal stackPeek
+	#jal stackPop	
+	#jal stackPeek
+	#jal stackPop	
+	#jal stackPop
+	#jal stackPop
+	#jal stackPeek
+	#jal stackPeek
+	#jal stackPop
+	#jal stackPeek
+	#jal stackPop
 	
 	li	$v0, 10			# exit()
 	syscall
@@ -273,47 +286,64 @@ stackIsEmpty:
 appendToExpression:
 	addi $t9, $zero, 0
 	move $t9, $a0
+	sw $t9, outputExpression($s0)
 	
-	li	$v0, 4			
-	la	$a0, newline 
-	syscall	
 	
-	li $v0, 1
+	
+	li $v0, 11
 	move $a0, $t9
-	syscall
-	
+	syscall	
 	li	$v0, 4			
 	la	$a0, beingAppended 
 	syscall	
 	
-	sw $t9, outputExpression($s0)
-	addi $s0, $s0, 4
 	
+	
+	
+	#li $v0, 11
+	#move $a0, $t9
+	#syscall	
+	
+	#does the actual appending
+	
+	
+	#increment the index we are at for main
+	
+	addi $s0, $s0, 4
 	jr $ra
 	
 printPostFixExpression:
 		addi $t7, $zero, 0
 		addi $t8, $zero, 0
 		
-		li	$v0, 4			
-		la	$a0, newline 
-		syscall	
-		li	$v0, 4			
-		la	$a0, newline 
-		syscall	
+
 	
 		#print first number
 		lw $t8, outputExpression($t7)
-		addi $t7, $t7, 4
 		li $v0, 1
 		move $a0, $t8
 		syscall
+		
 		#print 2nd number
+		addi $t7, $t7, 4
 		lw $t8, outputExpression($t7)
 		li $v0, 1
 		move $a0, $t8
 		syscall
 		
+		#print 3rd number
+		addi $t7, $t7, 4
+		lw $t8, outputExpression($t7)
+		li $v0, 1
+		move $a0, $t8
+		syscall
+		
+		#print 4th number
+		addi $t7, $t7, 4
+		lw $t8, outputExpression($t7)
+		li $v0, 1
+		move $a0, $t8
+		syscall
 		
 		li	$v0, 4			
 		la	$a0, newline 
@@ -322,6 +352,9 @@ printPostFixExpression:
 		la	$a0, newline 
 		syscall	
 	
+	li	$v0, 4			# Print
+	la	$a0, finishLine		# the string!
+	syscall
 	jr $ra
 
 	
