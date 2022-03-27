@@ -11,10 +11,13 @@
 #
 	.data
 input:	.space	256
-output:	.space	256
+outputExpression: .space 256
+pushingToStack: .asciiz " getting pushed to stack \n"
+poppingFromStack: .asciiz " is popped from stack \n"
 newline: .asciiz "\n"
 firstPrompt: .asciiz "enter an expression: \n"
 isThree: .asciiz "its a three\n!!! "
+isOperator: .asciiz " is an operator"
 isPlusOperator: .asciiz " found a +"
 isMinusOperator: .asciiz " found a -"
 isOpenParen: .asciiz " found ("
@@ -48,7 +51,7 @@ main:
 parseExpression:
 	li	$t0, 0			# Set t0 to zero to be sure
 	li	$t3, 0			# Set t3 to zero to be sure
-	
+	li 	$t6, 0
 	
 	parserLoop:
 		# $t3 is i=0
@@ -71,21 +74,38 @@ parseExpression:
 		#la	$a0, newline 
 		#syscall	
 		
-		beq $t4, '+' isPlus
-		beq $t4, '-' isMinus
+		beq $t4, '+' isPlusOrMinus
+		beq $t4, '-' isPlusOrMinus
 		beq $t4, '(' openParen
 		beq $t4, ')' closedParen
 		
 		#else is number section 
-		li	$v0, 4			
-		la	$a0, isNumber
-		syscall	  
-		li	$v0, 4			
-		la	$a0, newline 
-		syscall	    
-		j loopWork    
+			li	$v0, 4			
+			la	$a0, isNumber
+			syscall	  
+			li	$v0, 4			
+			la	$a0, newline 
+			syscall	    
+			#append to post fix
+			
+			j loopWork    
 		    
-		    
+		   
+		isPlusOrMinus:
+			    
+		      	li	$v0, 4			
+			la	$a0, isOperator
+			syscall	
+			li	$v0, 4			
+			la	$a0, newline 
+			syscall	
+			
+			
+			addi $a0, $zero, 0
+			move $a0, $t4
+			jal stackPush
+			
+			j loopWork
 		isPlus:
 		
 			li	$v0, 4			
@@ -107,7 +127,7 @@ parseExpression:
 			j loopWork
 		 
 		openParen:
-		 	
+		 	#push to stack
 		 	li	$v0, 4			
 			la	$a0, isOpenParen
 			syscall	
@@ -117,7 +137,7 @@ parseExpression:
 			j loopWork
 		 	
 		 closedParen:
-		 	
+		 	#pop everything from stack until a closed parenthesis
 			li	$v0, 4			
 			la	$a0, isClosedParen 
 			syscall	
@@ -135,12 +155,59 @@ parseExpression:
 	
 
 exit:
+	
+	
 	li	$v0, 4			# Print
-	la	$a0, output		# the string!
+	la	$a0, outputExpression		# the string!
 	syscall
-		
+	
+	jal stackPop	
+	
 	li	$v0, 10			# exit()
 	syscall
 	
+stackPush:
+	
+	addi $sp, $sp, -4
+	sw $a0, 0($sp) #push to stack
+	
+	move $t8, $a0
+	li	$v0, 4			
+	la	$a0, newline 
+	syscall	
+	
+	
+	li $v0, 11
+	move $a0, $t8
+	syscall
+	
+	li	$v0, 4			
+	la	$a0, pushingToStack 
+	syscall	
+	
+	jr $ra
+	
+	
+stackPop:
+	addi $t9, $zero, 0
+	lw $t9, 0($sp)
+	addi $sp, $sp, 4
+	
+	li $v0, 11
+	move $a0, $t9
+	syscall
+	
+	li	$v0, 4			
+	la	$a0, poppingFromStack 
+	syscall
+	
+	jr $ra
+stackPeek:
+
+stackIsEmpty:
+
+appendToExpression:
+
+
 
 	
