@@ -12,7 +12,7 @@ newline: .asciiz "\n"
 postfixExpressionMessage: .asciiz "postfix expression: "
 firstPrompt: .asciiz "enter an expression: \n"
 isThree: .asciiz "its a three!!!   "
-isOperator: .asciiz " is an operator"
+isOperatorMessage: .asciiz " is an operator"
 isPlusOperator: .asciiz " found a +"
 isMinusOperator: .asciiz " found a -"
 isOpenParen: .asciiz " found (\n"
@@ -206,7 +206,7 @@ AfterParseLoop:
 		
 		
 		
-PrintPostFixExpression:
+output:
 		
 		#print postfix message
 		li	$v0, 4			
@@ -219,20 +219,73 @@ PrintPostFixExpression:
 		syscall
 	
 EvaluateExpression:	
+	#reset index to zero
+	addi $s0, $zero, 0
+	addi $t2, $zero, 0
+	la $t2, outputExpression
+
+	li	$t0, 0			
+	li	$t3, 0	
+	li	$t4, 0
+
 	
+evaluateLoop:
+	# $t3 is i=0
+		add	$t3, $t2, $t0		# $t2 is the base address for our 'input' array, add loop index
+		lb	$t4, 0($t3)		# load a byte at a time according to counter								
+		beqz	$t4, EndOfProgram
+
+		li	$v0, 4			
+		la	$a0, newline 
+		syscall
+
+		li $v0, 11
+		move $a0, $t4
+		syscall
+		
+		beq $t4, '+' isOperator
+		beq $t4, '-' isOperator
+		beq $t4, '0' isOperand
+		beq $t4, '1' isOperand
+		beq $t4, '2' isOperand
+		beq $t4, '3' isOperand
+		beq $t4, '4' isOperand
+		beq $t4, '5' isOperand
+		beq $t4, '6' isOperand
+		beq $t4, '7' isOperand
+		beq $t4, '8' isOperand
+		beq $t4, '9' isOperand		
+		j iterate2
+
+		#is a + or -
+		isOperator:
+		
+
+			li	$v0, 4			
+			la	$a0, isOperatorMessage 
+			syscall		
 	
+		
+			j iterate2
+		
+		#is a number
+		isOperand:
+
+			
+			li	$v0, 4			
+			la	$a0, isNumberMessage 
+			syscall		
 	
-	
 
 
 
-
-
-
-
-
-
-
+			j iterate2
+		
+		
+		
+	iterate2:
+		addi	$t0, $t0, 1		# Advance our counter (i++)
+		j	evaluateLoop
 
 
 
