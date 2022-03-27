@@ -93,9 +93,14 @@ parseExpression:
 			
 			addi $a0, $zero, 0
 			addi $a0, $t4, 0
-			#sw $t4, outputExpression($s0)
-			#addi $s0, $s0, 4
-			jal appendToExpression
+			sb $t4, outputExpression($s0)
+			addi $s0, $s0, 1
+			
+			li, $v0, 4
+			la $a0,outputExpression
+			syscall
+			
+			#jal appendToExpression
 			
 			#this whole segment adds one to the stack(NOT NEEDED ANYMORE)
 			#addi $a0, $zero, 0
@@ -105,17 +110,7 @@ parseExpression:
 			la	$a0, newline 
 			syscall	 
 			
-			addi $s0, $s0, -4
-			addi $t6, $zero, 0
-			lw $t6, outputExpression($s0)
-			li $v0, 11
-			move $a0, $t6
-			syscall	
-			addi $s0, $s0, 4
 			
-			li	$v0, 4			
-			la	$a0, newline 
-			syscall	 
 			j loopWork    
 		    
 		   
@@ -184,14 +179,59 @@ parseExpression:
 
 exit:
 	
+			li	$v0, 4			
+			la	$a0, newline 
+			syscall	 
+	
+			
+			addi $s0, $s0, 0
+			addi $t6, $zero, 0
+			
+			
+			#la $s0, outputExpression
+			
+			lb $t6, outputExpression($s0)
+			li $v0, 1
+			move $a0, $t6
+			syscall	
+			addi $s0, $s0, 1
+			
+			lb $t6, outputExpression($s0)
+			li $v0, 1
+			move $a0, $t6
+			syscall	
+			addi $s0, $s0, 1
+			
+			lb $t6, outputExpression($s0)
+			li $v0, 1
+			move $a0, $t6
+			syscall	
+			addi $s0, $s0, 1
+			
+			lb $t6, outputExpression($s0)
+			li $v0, 1
+			move $a0, $t6
+			syscall	
+			addi $s0, $s0, 1
+	
+			lb $t6, outputExpression($s0)
+			li $v0, 1
+			move $a0, $t6
+			syscall	
+			addi $s0, $s0, 1
+	
+			li	$v0, 4			
+			la	$a0, newline 
+			syscall	 
+	
+	#THIS MIGHT BE OUR SAVIOR
+	#li	$v0, 4			# Print
+	#la	$a0, outputExpression		# the string!
+	#syscall
 	
 	
 	
-	li	$v0, 4			# Print
-	la	$a0, outputExpression		# the string!
-	syscall
-	
-	jal printPostFixExpression
+	#jal printPostFixExpression
 	
 	li	$v0, 4			
 	la	$a0, newline 
