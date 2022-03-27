@@ -5,8 +5,9 @@ outputExpression: .space 256
 pushingToStack: .asciiz " getting pushed to stack \n"
 poppingFromStack: .asciiz " is popped from stack \n"
 peakingFromStack: .asciiz " peeking from stack \n"
-stackIsEmpty: .asciiz " stack is empty\n"
+stackIsEmptyMessage: .asciiz " stack is empty\n"
 stickIsNotEmpty: .asciiz " stack is NOT empty\n"
+beingAppended: .asciiz " is being appended \n"
 newline: .asciiz "\n"
 firstPrompt: .asciiz "enter an expression: \n"
 isThree: .asciiz "its a three\n!!! "
@@ -28,10 +29,18 @@ main:
 	add $t1, $zero, 0
 	lw $t1, emptyStackSentinel($zero)
 	
+	#will use $s0 as an index for appending to string
+	addi $s0, $zero, 0
+	
 	addi $a0, $zero, 0
 	move $a0, $t1
 	jal stackPush
 	jal stackPeek  
+	
+	
+	addi $a0, $zero, 0
+	addi $a0, $zero, 7
+	jal appendToExpression
 	
 	li	$v0, 4			# output the initial prompt
 	la	$a0, firstPrompt
@@ -88,9 +97,13 @@ parseExpression:
 			syscall	    
 			#append to post fix
 			
-			addi $a0, $zero, 0
-			move $a0, $t4
-			jal stackPush
+			
+			#this whole segment adds one to the stack
+			#addi $a0, $zero, 0
+			#move $a0, $t4
+			#jal stackPush
+			
+			
 			j loopWork    
 		    
 		   
@@ -235,13 +248,45 @@ stackPeek:
 	
 stackIsEmpty:
 	#use stack peak and compare to an empty value
+	li	$v0, 4			
+	la	$a0, newline 
+	syscall	
 	jal stackPeek
+	move $a0, $v0
+	li $v0, 11
+	syscall
+	
+	li	$v0, 4			
+	la	$a0, newline 
+	syscall	
+	
 	addi $t9, $zero, 0
 	lw $t9, emptyStackSentinel($zero)
 	#beq $t9, $v0?
-	
+	jr $ra
 appendToExpression:
-
-
+	addi $t9, $zero, 0
+	move $t9, $a0
+	
+	li	$v0, 4			
+	la	$a0, newline 
+	syscall	
+	
+	li $v0, 1
+	move $a0, $t9
+	syscall
+	
+	li	$v0, 4			
+	la	$a0, beingAppended 
+	syscall	
+	
+	sw $t9, outputExpression($s0)
+	addi $s0, $s0, 4
+	
+	jr $ra
+	
+printPostFixExpression:
+		
+	jr $ra
 
 	
