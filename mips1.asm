@@ -26,7 +26,7 @@ finishLine: .asciiz "finish line woo!\n"
 	.text
 	.globl main
 main:
-	jal printPostFixExpression
+	
 	#will use $s0 as an index for appending to string
 	addi $s0, $zero, 0
 	add $t1, $zero, 0
@@ -96,9 +96,9 @@ parseExpression:
 			sb $t4, outputExpression($s0)
 			addi $s0, $s0, 1
 			
-			li, $v0, 4
-			la $a0,outputExpression
-			syscall
+			#li, $v0, 4
+			#la $a0,outputExpression
+			#syscall
 			
 			#jal appendToExpression
 			
@@ -167,6 +167,10 @@ parseExpression:
 			li	$v0, 4			
 			la	$a0, newline 
 			syscall	
+			addi $a0, $zero, 0
+			addi $a0, $t4, 0
+			sb $t4, outputExpression($s0)
+			addi $s0, $s0, 1
 			j loopWork
 		
 		
@@ -251,6 +255,11 @@ exit:
 	#jal stackPop
 	#jal stackPeek
 	#jal stackPop
+	
+	
+	li, $v0, 4
+	la $a0,outputExpression
+	syscall
 	
 	li	$v0, 10			# exit()
 	syscall
@@ -349,52 +358,7 @@ appendToExpression:
 	
 	#increment the index we are at for main
 	
-	addi $s0, $s0, 4
-	jr $ra
-	
-printPostFixExpression:
-		addi $t7, $zero, 0
-		addi $t8, $zero, 0
-		
-
-	
-		#print first number
-		lw $t8, outputExpression($t7)
-		li $v0, 1
-		move $a0, $t8
-		syscall
-		
-		#print 2nd number
-		addi $t7, $t7, 4
-		lw $t8, outputExpression($t7)
-		li $v0, 1
-		move $a0, $t8
-		syscall
-		
-		#print 3rd number
-		addi $t7, $t7, 4
-		lw $t8, outputExpression($t7)
-		li $v0, 1
-		move $a0, $t8
-		syscall
-		
-		#print 4th number
-		addi $t7, $t7, 4
-		lw $t8, outputExpression($t7)
-		li $v0, 1
-		move $a0, $t8
-		syscall
-		
-		li	$v0, 4			
-		la	$a0, newline 
-		syscall	
-		li	$v0, 4			
-		la	$a0, newline 
-		syscall	
-	
-	li	$v0, 4			# Print
-	la	$a0, finishLine		# the string!
-	syscall
+	addi $s0, $s0, 1
 	jr $ra
 
 	
