@@ -243,8 +243,8 @@ evaluateLoop:
 		move $a0, $t4
 		syscall
 		
-		beq $t4, '+' isOperator
-		beq $t4, '-' isOperator
+		beq $t4, '+' isPlus
+		beq $t4, '-' isMinus
 		beq $t4, '0' isOperand
 		beq $t4, '1' isOperand
 		beq $t4, '2' isOperand
@@ -257,14 +257,40 @@ evaluateLoop:
 		beq $t4, '9' isOperand		
 		j iterate2
 
-		#is a + or -
-		isOperator:
-		
-
+		isPlus:
+			
+		isMinus:
+			
+			#stack pop =$t6
+			addi $t6, $zero, 0
+			jal stackPop
+			move $t6, $v0
+			
+			#stack pop =$t5
+			addi $t5, $zero, 0
+			jal stackPop
+			move $t5, $v0
+			
+			# $t7=$t5-$t6
+			addi $t7, $zero, 0
+			sub $t7, $t5, $t6
+			
+			#push $t7(result) to stack
+			addi $a0, $zero, 0
+			move $a0, $t7
+			jal stackPush
+			
 			li	$v0, 4			
-			la	$a0, isOperatorMessage 
-			syscall		
-	
+			la	$a0, newline 
+			syscall
+			
+			addi $t6, $zero, 0
+			jal stackPeek
+			move $t6, $v0
+			
+			li $v0, 1
+			move $a0, $t6
+			syscall
 		
 			j iterate2
 		
@@ -275,8 +301,11 @@ evaluateLoop:
 			li	$v0, 4			
 			la	$a0, isNumberMessage 
 			syscall		
-	
-
+			
+			#push it onto stack
+			addi $a0, $zero, 0
+			move $a0, $t4
+			jal stackPush
 
 
 			j iterate2
