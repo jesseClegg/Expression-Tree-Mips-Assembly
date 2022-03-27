@@ -1,86 +1,127 @@
-.data
-	userInput: .space 10 #number of characters to accept is 10
-	firstPrompt: .asciiz "enter an expression..."
-	newline: .asciiz "\n"
-	uEntered: .asciiz "you entered= \n"
-	testExpression: .asciiz "(1-(3+5))\n"
-	finishLine: .asciiz "\nfinish line!!!\n"
+#
+# reverse.asm
+# I'll probably improve on this over the semester,
+# as it was hacked up in about an hour.
+#
+# 	**** user input : The quick brown fox jumped over the lazy cat.
+# 	The quick brown fox jumped over the lazy cat.
+# 	45
+# 	.tac yzal eht revo depmuj xof nworb kciuq ehT
+# 	-- program is finished running --
+#
+	.data
+input:	.space	256
+output:	.space	256
+newline: .asciiz "\n"
+firstPrompt: .asciiz "enter an expression: \n"
+isThree: .asciiz "its a three\n!!! "
+isPlusOperator: .asciiz " found a +"
+isMinusOperator: .asciiz " found a -"
+isNumber: .asciiz " is a number"
+isNotThree: .asciiz "NOT THREE\n"
+sizeOf: .asciiz "expression has size of : "
+plusSign: .byte '+'
+minusSign: .byte '-'
+
+	.text
+	.globl main
+main:
 	
-.text
-
-.globl main
-
-	main: 
-		#li $v0, 4
-		#la $a0, firstPrompt
-		#syscall
+	
+	li	$v0, 4			# output the initial prompt
+	la	$a0, firstPrompt
+	syscall
+	
+	li	$v0, 8			# read in expression
+	la	$a0, input		#stored into input
+	li	$a1, 256		# max size=  256 chars/bytes 
+	syscall
+	
+	#li	$v0, 4			# output the expression
+	#la	$a0, input
+	#syscall
+	la $t2, input
+	
+	
+parseExpression:
+	li	$t0, 0			# Set t0 to zero to be sure
+	li	$t3, 0			# Set t3 to zero to be sure
+	
+	
+	parserLoop:
+		# $t3 is i=0
+		add	$t3, $t2, $t0		# $t2 is the base address for our 'input' array, add loop index
+		lb	$t4, 0($t3)		# load a byte at a time according to counter
+										
+		beqz	$t4, exit		# We found the end of the expression (null-byte)
+		#sb	$t4, output($t1) could later re purpose this for stack use
 		
-		#scan user input 
-		#li $v0, 8 #8 for a string
-		#la $a0, userInput #input will be stored to the address of userInput
-		#li $a1, 10 #tell the system how many characters we are going to store
-		#syscall 
 		
-		#print "ypu entered..."
-		#li $v0, 4
-		#la $a0, uEntered
-		#syscall
+		#####THIS IS WHERE WE HAVE ACCESS TO THE CHARACTERS! $T4
 		
-		
-		
-		
-		#print the actual string
-		li $v0, 4 
-		la $a0, testExpression
+		#just prints each character for right now
+		li $v0, 11
+		move $a0, $t4
 		syscall
-		
-		#print newline
-		li $v0, 4
-		la $a0, newline
-		syscall
-		
-		#int i=0
-		addi $t0, $zero, 0
-	
-		#$t1=array.length	
-		addi $t1, $zero, 9			
-		sll $t1, $t1, 2 #multiply by 4
-	
-		#successfully loop 9 times
-		Loop:
-			beq $t0, $t1, breakLoop
-			addi, $t0, $t0, 4
 			
-			#print the actual string
-			li $v0, 4 
-			la $a0, testExpression
-			syscall
+		#prnt a newline	
+		#li	$v0, 4			
+		#la	$a0, newline 
+		#syscall	
+		
+		beq $t4, '+' isPlus
+		beq $t4, '-' isMinus
+		 
+		#is number section 
+		li	$v0, 4			
+		la	$a0, isNumber
+		syscall	  
+		li	$v0, 4			
+		la	$a0, newline 
+		syscall	    
+		j loopWork    
+		    
+		    
+			isPlus:
+			li	$v0, 4			
+			la	$a0, isPlusOperator
+			syscall	
+			li	$v0, 4			
+			la	$a0, newline 
+			syscall	
+			j loopWork
+		
+		
+			isMinus:
+			li	$v0, 4			
+			la	$a0, isMinusOperator
+			syscall	
+			li	$v0, 4			
+			la	$a0, newline 
+			syscall	
+			j loopWork
+		 
+		
+		
+		
+	loopWork:
+		
+		
+						
+		
+		addi	$t0, $t0, 1		# Advance our counter (i++)
+		j	parserLoop		# Loop until we reach our condition
+	
 
-			lw $t4, testExpression($t0)
-			addi $a0, $t4, $zero
+	
 
-			li $v0, 1
-			syscall
-
-
-
-		j Loop
-
-	breakLoop:
-			
-
-
-
-	#print finish line
-	li $v0, 4 
-	la $a0, finishLine
+exit:
+	li	$v0, 4			# Print
+	la	$a0, output		# the string!
 	syscall
 		
-	end:
-	# code for exit
-	li $v0, 10 
-	syscall	
-	
-				
+	li	$v0, 10			# exit()
+	syscall
 	
 
+	
