@@ -42,6 +42,12 @@ main:
 	addi $a0, $zero, 7
 	jal appendToExpression
 	
+	addi $a0, $zero, 0
+	addi $a0, $zero, 9
+	jal appendToExpression
+	
+	jal printPostFixExpression
+	
 	li	$v0, 4			# output the initial prompt
 	la	$a0, firstPrompt
 	syscall
@@ -286,7 +292,36 @@ appendToExpression:
 	jr $ra
 	
 printPostFixExpression:
+		addi $t7, $zero, 0
+		addi $t8, $zero, 0
 		
+		li	$v0, 4			
+		la	$a0, newline 
+		syscall	
+		li	$v0, 4			
+		la	$a0, newline 
+		syscall	
+	
+		#print first number
+		lw $t8, outputExpression($t7)
+		addi $t7, $t7, 4
+		li $v0, 1
+		move $a0, $t8
+		syscall
+		#print 2nd number
+		lw $t8, outputExpression($t7)
+		li $v0, 1
+		move $a0, $t8
+		syscall
+		
+		
+		li	$v0, 4			
+		la	$a0, newline 
+		syscall	
+		li	$v0, 4			
+		la	$a0, newline 
+		syscall	
+	
 	jr $ra
 
 	
