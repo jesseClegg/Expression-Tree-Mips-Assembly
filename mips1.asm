@@ -14,6 +14,7 @@ input:	.space	256
 outputExpression: .space 256
 pushingToStack: .asciiz " getting pushed to stack \n"
 poppingFromStack: .asciiz " is popped from stack \n"
+peakingFromStack: .asciiz " peeking from stack \n"
 newline: .asciiz "\n"
 firstPrompt: .asciiz "enter an expression: \n"
 isThree: .asciiz "its a three\n!!! "
@@ -88,6 +89,9 @@ parseExpression:
 			syscall	    
 			#append to post fix
 			
+			addi $a0, $zero, 0
+			move $a0, $t4
+			jal stackPush
 			j loopWork    
 		    
 		   
@@ -101,9 +105,9 @@ parseExpression:
 			syscall	
 			
 			
-			addi $a0, $zero, 0
-			move $a0, $t4
-			jal stackPush
+			#addi $a0, $zero, 0
+			#move $a0, $t4
+			#jal stackPush
 			
 			j loopWork
 		isPlus:
@@ -161,13 +165,26 @@ exit:
 	la	$a0, outputExpression		# the string!
 	syscall
 	
+	li	$v0, 4			
+	la	$a0, newline 
+	syscall	
+	
+	jal stackPeek
 	jal stackPop	
+	jal stackPeek
+	jal stackPop	
+	jal stackPop
+	jal stackPop
+	jal stackPeek
+	jal stackPeek
+	jal stackPop
+	jal stackPeek
+	jal stackPop
 	
 	li	$v0, 10			# exit()
 	syscall
 	
 stackPush:
-	
 	addi $sp, $sp, -4
 	sw $a0, 0($sp) #push to stack
 	
@@ -200,12 +217,24 @@ stackPop:
 	li	$v0, 4			
 	la	$a0, poppingFromStack 
 	syscall
-	
+	#remember to return it in $v0 for use in main
 	jr $ra
 stackPeek:
-
+	addi $t9, $zero, 0
+	lw $t9, 0($sp)
+	
+	li $v0, 11
+	move $a0, $t9
+	syscall
+	
+	li	$v0, 4			
+	la	$a0, peakingFromStack  
+	syscall
+	
+	jr $ra
+	
 stackIsEmpty:
-
+	#use stack peak and compare to an empty value
 appendToExpression:
 
 
