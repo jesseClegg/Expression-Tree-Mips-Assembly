@@ -1,20 +1,12 @@
-#
-# reverse.asm
-# I'll probably improve on this over the semester,
-# as it was hacked up in about an hour.
-#
-# 	**** user input : The quick brown fox jumped over the lazy cat.
-# 	The quick brown fox jumped over the lazy cat.
-# 	45
-# 	.tac yzal eht revo depmuj xof nworb kciuq ehT
-# 	-- program is finished running --
-#
+
 	.data
 input:	.space	256
 outputExpression: .space 256
 pushingToStack: .asciiz " getting pushed to stack \n"
 poppingFromStack: .asciiz " is popped from stack \n"
 peakingFromStack: .asciiz " peeking from stack \n"
+stackIsEmpty: .asciiz " stack is empty\n"
+stickIsNotEmpty: .asciiz " stack is NOT empty\n"
 newline: .asciiz "\n"
 firstPrompt: .asciiz "enter an expression: \n"
 isThree: .asciiz "its a three\n!!! "
@@ -28,11 +20,18 @@ isNotThree: .asciiz "NOT THREE\n"
 sizeOf: .asciiz "expression has size of : "
 plusSign: .byte '+'
 minusSign: .byte '-'
-
+emptyStackSentinel: .word 'E'
 	.text
 	.globl main
 main:
 	
+	add $t1, $zero, 0
+	lw $t1, emptyStackSentinel($zero)
+	
+	addi $a0, $zero, 0
+	move $a0, $t1
+	jal stackPush
+	jal stackPeek  
 	
 	li	$v0, 4			# output the initial prompt
 	la	$a0, firstPrompt
@@ -231,10 +230,16 @@ stackPeek:
 	la	$a0, peakingFromStack  
 	syscall
 	
+	move $v0, $t9
 	jr $ra
 	
 stackIsEmpty:
 	#use stack peak and compare to an empty value
+	jal stackPeek
+	addi $t9, $zero, 0
+	lw $t9, emptyStackSentinel($zero)
+	#beq $t9, $v0?
+	
 appendToExpression:
 
 
