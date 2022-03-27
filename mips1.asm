@@ -17,6 +17,8 @@ firstPrompt: .asciiz "enter an expression: \n"
 isThree: .asciiz "its a three\n!!! "
 isPlusOperator: .asciiz " found a +"
 isMinusOperator: .asciiz " found a -"
+isOpenParen: .asciiz " found ("
+isClosedParen: .asciiz " found )"
 isNumber: .asciiz " is a number"
 isNotThree: .asciiz "NOT THREE\n"
 sizeOf: .asciiz "expression has size of : "
@@ -71,8 +73,10 @@ parseExpression:
 		
 		beq $t4, '+' isPlus
 		beq $t4, '-' isMinus
-		 
-		#is number section 
+		beq $t4, '(' openParen
+		beq $t4, ')' closedParen
+		
+		#else is number section 
 		li	$v0, 4			
 		la	$a0, isNumber
 		syscall	  
@@ -82,17 +86,18 @@ parseExpression:
 		j loopWork    
 		    
 		    
-			isPlus:
+		isPlus:
+		
 			li	$v0, 4			
 			la	$a0, isPlusOperator
 			syscall	
 			li	$v0, 4			
 			la	$a0, newline 
 			syscall	
-			j loopWork
+			j loopWork	
 		
+		isMinus:
 		
-			isMinus:
 			li	$v0, 4			
 			la	$a0, isMinusOperator
 			syscall	
@@ -101,14 +106,28 @@ parseExpression:
 			syscall	
 			j loopWork
 		 
-		
+		openParen:
+		 	
+		 	li	$v0, 4			
+			la	$a0, isOpenParen
+			syscall	
+			li	$v0, 4			
+			la	$a0, newline 
+			syscall	
+			j loopWork
+		 	
+		 closedParen:
+		 	
+			li	$v0, 4			
+			la	$a0, isClosedParen 
+			syscall	
+			li	$v0, 4			
+			la	$a0, newline 
+			syscall	
+			j loopWork
 		
 		
 	loopWork:
-		
-		
-						
-		
 		addi	$t0, $t0, 1		# Advance our counter (i++)
 		j	parserLoop		# Loop until we reach our condition
 	
