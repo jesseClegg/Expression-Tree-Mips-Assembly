@@ -5,8 +5,8 @@ outputExpression: .space 256
 pushingToStack: .asciiz " getting pushed to stack \n"
 poppingFromStack: .asciiz " is popped from stack \n"
 peakingFromStack: .asciiz " peeking from stack \n"
-stackIsEmptyMessage: .asciiz " stack is empty\n"
-stickIsNotEmpty: .asciiz " stack is NOT empty\n"
+stackIsEmptyMessage: .asciiz " stack is empty"
+stickIsNotEmpty: .asciiz " stack is NOT empty"
 beingAppended: .asciiz " is being appended "
 newline: .asciiz "\n"
 firstPrompt: .asciiz "enter an expression: \n"
@@ -14,8 +14,8 @@ isThree: .asciiz "its a three\n!!! "
 isOperator: .asciiz " is an operator"
 isPlusOperator: .asciiz " found a +"
 isMinusOperator: .asciiz " found a -"
-isOpenParen: .asciiz " found ("
-isClosedParen: .asciiz " found )"
+isOpenParen: .asciiz " found (\n"
+isClosedParen: .asciiz " found )\n"
 isNumber: .asciiz " is a number"
 isNotThree: .asciiz "NOT THREE\n"
 sizeOf: .asciiz "expression has size of : "
@@ -35,8 +35,48 @@ main:
 	lw $t1, emptyStackSentinel($zero)
 	addi $a0, $zero, 0
 	move $a0, $t1
-	#jal stackPush
-	#jal stackPeek  
+	jal stackPush
+	
+	addi $t8, $zero, 0
+	
+	
+	#jal stackIsEmpty
+	#move $t8, $v0
+	
+	#li	$v0, 4			
+	#la	$a0, stackIsEmptyMessage
+	#syscall
+	
+	#li $v0, 1
+	#move $a0, $t8
+	#syscall
+	
+	
+	
+	
+		#addi $t7, $zero, 7
+		#addi $a0, $zero, 0
+		#move $a0, $t7
+		#jal stackPush
+		
+		#addi $t8, $zero, 0
+		
+		#jal stackIsEmpty
+		#move $t8, $v0
+	
+		#li	$v0, 4			
+		#la	$a0, stickIsNotEmpty
+		#syscall
+	
+		#li $v0, 1
+		#move $a0, $t8
+		#syscall
+		
+		
+		
+	li	$v0, 4			
+	la	$a0, newline 
+	syscall		
 	
 	li	$v0, 4			# output the initial prompt
 	la	$a0, firstPrompt
@@ -80,37 +120,13 @@ parseExpression:
 			li	$v0, 4			
 			la	$a0, newline 
 			syscall	    
+			
 			#append to post fix
-			
-			#addi $a0, $zero, 0
-			#addi $a0, $t4, 0
-			
-			#li $v0, 11
-			#move $a0, $t4
-			#syscall	
-			#move $a0, $t4
-		
-			
 			addi $a0, $zero, 0
 			addi $a0, $t4, 0
 			sb $t4, outputExpression($s0)
 			addi $s0, $s0, 1
-			
-			#li, $v0, 4
-			#la $a0,outputExpression
-			#syscall
-			
-			#jal appendToExpression
-			
-			#this whole segment adds one to the stack(NOT NEEDED ANYMORE)
-			#addi $a0, $zero, 0
-			#move $a0, $t4
-			#jal stackPush
-			li	$v0, 4			
-			la	$a0, newline 
-			syscall	 
-			
-			
+	
 			j loopWork    
 		    
 		   
@@ -123,58 +139,110 @@ parseExpression:
 			la	$a0, newline 
 			syscall	
 			
+			addi $s3, $zero, 0
 			
-			#addi $a0, $zero, 0
-			#move $a0, $t4
-			#jal stackPush
+			jal stackIsEmpty
+			move $s3, $v0
 			
-			j loopWork
-		isPlus:
-		
-			li	$v0, 4			
-			la	$a0, isPlusOperator
-			syscall	
-			li	$v0, 4			
-			la	$a0, newline 
-			syscall	
-			j loopWork	
-		
-		isMinus:
-		
-			li	$v0, 4			
-			la	$a0, isMinusOperator
-			syscall	
-			li	$v0, 4			
-			la	$a0, newline 
-			syscall	
-			j loopWork
+			li	$v0, 11			# Print
+			move	$a0, $s3		# the string!
+			syscall
+			
+			
+			li	$v0, 4			# Print
+			la	$a0, finishLine		# the string!
+			syscall
+			
+			beq $s3, 1 wasEmpty
+				#pop from stack and append to postfix
+				jal stackPop
+				addi $a0, $zero, 0
+				addi $a0, $v0, 0
+				sb $a0, outputExpression($s0)
+				addi $s0, $s0, 1
+				 
+				#j loopWork
+				j isPlusOrMinus
+			wasEmpty:
+				#put onto the stack if stack is empty!!
+				addi $a0, $zero, 0
+				move $a0, $t4
+				jal stackPush
+			
+				j loopWork
 		 
 		openParen:
 		 	#push to stack
 		 	li	$v0, 4			
 			la	$a0, isOpenParen
 			syscall	
-			li	$v0, 4			
-			la	$a0, newline 
-			syscall	
+			
+			
+			#put onto the stack
+			addi $a0, $zero, 0
+			move $a0, $t4
+			jal stackPush
+			
 			j loopWork
 		 	
 		 closedParen:
-		 	#pop everything from stack until a closed parenthesis
+		 	
 			li	$v0, 4			
 			la	$a0, isClosedParen 
 			syscall	
 			li	$v0, 4			
 			la	$a0, newline 
 			syscall	
+			
+		parenLoop:	
+			#pop everything from stack until a closed parenthesis
+			#need to make a loop here
+			addi $t6, $zero, 0
+			jal stackPeek
+			move $t6, $v0
+			
+			beq $t6, '(' matchingParen
+			addi $t8, $zero, 0
+			
+			#should have whats popped from stack now
+			jal stackPop
+			move $t8, $v0
+			
+			#append to post fix
 			addi $a0, $zero, 0
-			addi $a0, $t4, 0
-			sb $t4, outputExpression($s0)
+			addi $a0, $t8, 0
+			sb $t8, outputExpression($s0)
 			addi $s0, $s0, 1
+			j parenLoop
+		matchingParen:
+			#pop it to get rid of the '('
+			jal stackPop
+			
+			li	$v0, 4			
+			la	$a0, newline 
+			syscall	
+			 
+			 li $v0, 11
+			 move $a0, $t8
+			 syscall
+			
+			
 			j loopWork
 		
 		
 	loopWork:
+		li	$v0, 4			
+		la	$a0, newline 
+		syscall
+		
+		li, $v0, 4
+		la $a0, outputExpression
+		syscall
+		
+		li	$v0, 4			
+		la	$a0, newline 
+		syscall
+		
 		addi	$t0, $t0, 1		# Advance our counter (i++)
 		j	parserLoop		# Loop until we reach our condition
 	
@@ -183,60 +251,6 @@ parseExpression:
 
 exit:
 	
-			li	$v0, 4			
-			la	$a0, newline 
-			syscall	 
-	
-			
-			addi $s0, $s0, 0
-			addi $t6, $zero, 0
-			
-			
-			#la $s0, outputExpression
-			
-			lb $t6, outputExpression($s0)
-			li $v0, 1
-			move $a0, $t6
-			syscall	
-			addi $s0, $s0, 1
-			
-			lb $t6, outputExpression($s0)
-			li $v0, 1
-			move $a0, $t6
-			syscall	
-			addi $s0, $s0, 1
-			
-			lb $t6, outputExpression($s0)
-			li $v0, 1
-			move $a0, $t6
-			syscall	
-			addi $s0, $s0, 1
-			
-			lb $t6, outputExpression($s0)
-			li $v0, 1
-			move $a0, $t6
-			syscall	
-			addi $s0, $s0, 1
-	
-			lb $t6, outputExpression($s0)
-			li $v0, 1
-			move $a0, $t6
-			syscall	
-			addi $s0, $s0, 1
-	
-			li	$v0, 4			
-			la	$a0, newline 
-			syscall	 
-	
-	#THIS MIGHT BE OUR SAVIOR
-	#li	$v0, 4			# Print
-	#la	$a0, outputExpression		# the string!
-	#syscall
-	
-	
-	
-	#jal printPostFixExpression
-	
 	li	$v0, 4			
 	la	$a0, newline 
 	syscall	
@@ -244,21 +258,10 @@ exit:
 	li	$v0, 4			# Print
 	la	$a0, finishLine		# the string!
 	syscall
-	#jal stackPeek
-	#jal stackPop	
-	#jal stackPeek
-	#jal stackPop	
-	#jal stackPop
-	#jal stackPop
-	#jal stackPeek
-	#jal stackPeek
-	#jal stackPop
-	#jal stackPeek
-	#jal stackPop
-	
+
 	
 	li, $v0, 4
-	la $a0,outputExpression
+	la $a0, outputExpression
 	syscall
 	
 	li	$v0, 10			# exit()
@@ -297,7 +300,9 @@ stackPop:
 	li	$v0, 4			
 	la	$a0, poppingFromStack 
 	syscall
+	
 	#remember to return it in $v0 for use in main
+	move $v0, $t9
 	jr $ra
 stackPeek:
 	addi $t9, $zero, 0
@@ -315,23 +320,35 @@ stackPeek:
 	jr $ra
 	
 stackIsEmpty:
-	#use stack peak and compare to an empty value
-	li	$v0, 4			
-	la	$a0, newline 
-	syscall	
-	jal stackPeek
-	move $a0, $v0
-	li $v0, 11
-	syscall
+	#return 1 if empty, 0 else
+	#li	$v0, 4			
+	#la	$a0, newline 
+	#syscall	
 	
-	li	$v0, 4			
-	la	$a0, newline 
-	syscall	
+	
+	#jal stackPeek
+	
+	
+	#move $a0, $v0
+	#li $v0, 11
+	#syscall
+	
+	#li	$v0, 4			
+	#la	$a0, newline 
+	#syscall	
 	
 	addi $t9, $zero, 0
-	lw $t9, emptyStackSentinel($zero)
-	#beq $t9, $v0?
+	lw $t9, 0($sp)
+	
+	addi $t8, $zero, 0
+	lw $t8, emptyStackSentinel($zero)
+	beq $t9, $t8 empty
+	
+	addi $v0, $zero, 0
 	jr $ra
+	empty:
+	 addi $v0, $zero, 1
+	 jr $ra
 appendToExpression:
 	addi $t9, $zero, 0
 	move $t9, $a0
@@ -361,4 +378,4 @@ appendToExpression:
 	addi $s0, $s0, 1
 	jr $ra
 
-	
+		
