@@ -2,7 +2,7 @@
 	.data
 input:	.space	256
 outputExpression: .space 256
-pushingToStack: .asciiz " getting pushed to stack \n"
+pushingToStack: .asciiz " ] is getting pushed to stack \n"
 poppingFromStack: .asciiz " is popped from stack \n"
 peakingFromStack: .asciiz " peeking from stack"
 stackIsEmptyMessage: .asciiz " stack is empty"
@@ -13,17 +13,21 @@ postfixExpressionMessage: .asciiz "postfix expression: "
 firstPrompt: .asciiz "enter an expression: \n"
 isThree: .asciiz "its a three!!!   "
 isOperatorMessage: .asciiz " is an operator"
-isPlusOperator: .asciiz " found a +"
-isMinusOperator: .asciiz " found a -"
+isPlusOperator: .asciiz " found a +\n"
+isMinusOperator: .asciiz " found a -\n"
 isOpenParen: .asciiz " found (\n"
 isClosedParen: .asciiz " found )\n"
 isNumberMessage: .asciiz " is a number"
-isNotThree: .asciiz "NOT THREE\n"
+emptyingstackmessage: .asciiz "NOW EMPYTING THE STACK...\n"
 sizeOf: .asciiz "expression has size of : "
 plusSign: .byte '+'
 minusSign: .byte '-'
 emptyStackSentinel: .word 'E'
 finishLine: .asciiz "finish line woo!"
+resultofoperationmessage: .asciiz " resulted from operation \n"
+firstnumis: .asciiz " is first number \n"
+secondnumis: .asciiz " is second number \n"
+bracket: .asciiz " )"
 	.text
 	.globl main
 main:
@@ -239,9 +243,16 @@ evaluateLoop:
 		la	$a0, newline 
 		syscall
 
+		#print the current element
 		li $v0, 11
 		move $a0, $t4
 		syscall
+		
+		li	$v0, 4			
+		la	$a0, bracket
+		syscall
+		
+		
 		
 		beq $t4, '+' isPlus
 		beq $t4, '-' isMinus
@@ -258,22 +269,113 @@ evaluateLoop:
 		j iterate2
 
 		isPlus:
-			
-		isMinus:
+			li	$v0, 4			
+			la	$a0, isPlusOperator 
+			syscall	
 			
 			#stack pop =$t6
 			addi $t6, $zero, 0
 			jal stackPop
 			move $t6, $v0
 			
+			#printline messages
+			li $v0, 11
+			move $a0, $t6
+			syscall
+			li	$v0, 4			
+			la	$a0, secondnumis 
+			syscall	
+			
+			#subtract 48
+			#subi $t6, $t6, 48
+			
 			#stack pop =$t5
 			addi $t5, $zero, 0
 			jal stackPop
 			move $t5, $v0
 			
+			#printline messages
+			li $v0, 11
+			move $a0, $t5
+			syscall
+			li	$v0, 4			
+			la	$a0, firstnumis 
+			syscall	
+			
+			#subtract 48
+			#subi $t5, $t5, 48
+			
+			# $t7=$t5+$t6
+			addi $t7, $zero, 0
+			add $t7, $t5, $t6
+			
+			#add 48 back on
+			#addi $t7, $t7, 48
+			
+			#print the result
+			li $v0, 1
+			move $a0, $t7
+			syscall
+		
+			li	$v0, 4			
+			la	$a0, resultofoperationmessage 
+			syscall
+			
+			#push $t7(result) to stack
+			addi $a0, $zero, 0
+			move $a0, $t7
+			jal stackPush
+			
+			j iterate2
+		isMinus:
+			li	$v0, 4			
+			la	$a0, isMinusOperator 
+			syscall	
+			
+			#stack pop =$t6
+			addi $t6, $zero, 0
+			jal stackPop
+			move $t6, $v0
+			
+			li $v0, 11
+			move $a0, $t6
+			syscall
+			
+			li	$v0, 4			
+			la	$a0, secondnumis 
+			syscall	
+			
+			#stack pop =$t5
+			addi $t5, $zero, 0
+			jal stackPop
+			move $t5, $v0
+			
+			li $v0, 11
+			move $a0, $t5
+			syscall
+			
+			li	$v0, 4			
+			la	$a0, firstnumis 
+			syscall	
+			
+			
+			
 			# $t7=$t5-$t6
 			addi $t7, $zero, 0
 			sub $t7, $t5, $t6
+			
+			li	$v0, 4			
+			la	$a0, newline 
+			syscall
+			
+			#print the result
+			li $v0, 11
+			move $a0, $t7
+			syscall
+		
+			li	$v0, 4			
+			la	$a0, resultofoperationmessage 
+			syscall
 			
 			#push $t7(result) to stack
 			addi $a0, $zero, 0
@@ -288,25 +390,35 @@ evaluateLoop:
 			jal stackPeek
 			move $t6, $v0
 			
+			#print the result from stack peek
 			li $v0, 1
 			move $a0, $t6
 			syscall
 		
+			li	$v0, 4			
+			la	$a0, resultofoperationmessage 
+			syscall
+			
+			
 			j iterate2
 		
 		#is a number
 		isOperand:
 
+			#subtract 48
+			subi $t4, $t4, 48
 			
-			li	$v0, 4			
+			li	$v0, 1			
 			la	$a0, isNumberMessage 
 			syscall		
+			
 			
 			#push it onto stack
 			addi $a0, $zero, 0
 			move $a0, $t4
 			jal stackPush
 
+		
 
 			j iterate2
 		
@@ -326,6 +438,59 @@ evaluateLoop:
 
 
 EndOfProgram:	
+		
+		li	$v0, 4			
+		la	$a0, newline 
+		syscall
+		
+		li	$v0, 4			
+		la	$a0, emptyingstackmessage
+		syscall
+		
+		li	$v0, 4			
+		la	$a0, newline 
+		syscall
+	emptyTheStack2:
+		
+		addi $s3, $zero, 0
+		jal stackIsEmpty
+		move $s3, $v0	
+		
+		beq $s3, 1 stackIsEmptied2		
+		
+			jal stackPop
+			addi $t9, $zero, 0
+			addi $t9, $v0, 0
+		
+			li $v0, 11
+			move $a0, $t9
+			syscall
+			
+			li	$v0, 4			
+			la	$a0, newline 
+			syscall
+			
+			j emptyTheStack2		 
+
+
+	stackIsEmptied2:
+		
+		
+		
+		
+		
+		
+		
+		
+		
+		
+		
+		
+		
+		
+		
+		
+		
 		#newline
 		li	$v0, 4			
 		la	$a0, newline 
@@ -341,16 +506,35 @@ EndOfProgram:
 		syscall
 #####################################################################################################################	
 stackPush:
+	#move stack pointer
 	addi $sp, $sp, -4
 	sw $a0, 0($sp) #push to stack	
+	
+	
+	move $t8, $a0
+	li	$v0, 4			
+	la	$a0, newline 
+	syscall	
+	
+	li $v0, 11
+	move $a0, $t8
+	syscall
+	
+	li	$v0, 4			
+	la	$a0, pushingToStack 
+	syscall	
+	
 	
 	jr $ra
 	
 stackPop:
 	addi $t9, $zero, 0
 	lw $t9, 0($sp)
+	
+	#move stack pointer
 	addi $sp, $sp, 4
-
+	
+	addi $v0, $zero, 0
 	move $v0, $t9
 	jr $ra
 	
@@ -358,6 +542,7 @@ stackPeek:
 	addi $t9, $zero, 0
 	lw $t9, 0($sp)
 	
+	addi $v0, $zero, 0
 	move $v0, $t9
 	jr $ra
 	
@@ -381,6 +566,8 @@ appendToExpression:
 	sw $t9, outputExpression($s0)
 	syscall		
 	
+	
+	#dont need this?
 	#increment the index we are at for main	
 	addi $s0, $s0, 1
 	jr $ra
