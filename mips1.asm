@@ -286,9 +286,6 @@ evaluateLoop:
 			la	$a0, secondnumis 
 			syscall	
 			
-			#subtract 48
-			#subi $t6, $t6, 48
-			
 			#stack pop =$t5
 			addi $t5, $zero, 0
 			jal stackPop
@@ -302,15 +299,9 @@ evaluateLoop:
 			la	$a0, firstnumis 
 			syscall	
 			
-			#subtract 48
-			#subi $t5, $t5, 48
-			
 			# $t7=$t5+$t6
 			addi $t7, $zero, 0
 			add $t7, $t5, $t6
-			
-			#add 48 back on
-			#addi $t7, $t7, 48
 			
 			#print the result
 			li $v0, 1
@@ -337,10 +328,10 @@ evaluateLoop:
 			jal stackPop
 			move $t6, $v0
 			
+			#printline messages
 			li $v0, 11
 			move $a0, $t6
 			syscall
-			
 			li	$v0, 4			
 			la	$a0, secondnumis 
 			syscall	
@@ -350,26 +341,20 @@ evaluateLoop:
 			jal stackPop
 			move $t5, $v0
 			
+			#printline messages
 			li $v0, 11
 			move $a0, $t5
 			syscall
-			
 			li	$v0, 4			
 			la	$a0, firstnumis 
 			syscall	
-			
-			
 			
 			# $t7=$t5-$t6
 			addi $t7, $zero, 0
 			sub $t7, $t5, $t6
 			
-			li	$v0, 4			
-			la	$a0, newline 
-			syscall
-			
 			#print the result
-			li $v0, 11
+			li $v0, 1
 			move $a0, $t7
 			syscall
 		
@@ -381,24 +366,6 @@ evaluateLoop:
 			addi $a0, $zero, 0
 			move $a0, $t7
 			jal stackPush
-			
-			li	$v0, 4			
-			la	$a0, newline 
-			syscall
-			
-			addi $t6, $zero, 0
-			jal stackPeek
-			move $t6, $v0
-			
-			#print the result from stack peek
-			li $v0, 1
-			move $a0, $t6
-			syscall
-		
-			li	$v0, 4			
-			la	$a0, resultofoperationmessage 
-			syscall
-			
 			
 			j iterate2
 		
