@@ -373,7 +373,7 @@ evaluateLoop:
 		isOperand:
 
 			#subtract 48
-			subi $t4, $t4, 48
+			addi $t4, $t4, -48
 			
 			li	$v0, 1			
 			la	$a0, isNumberMessage 
@@ -429,7 +429,7 @@ EndOfProgram:
 			addi $t9, $zero, 0
 			addi $t9, $v0, 0
 		
-			li $v0, 11
+			li $v0, 1
 			move $a0, $t9
 			syscall
 			
@@ -478,18 +478,18 @@ stackPush:
 	sw $a0, 0($sp) #push to stack	
 	
 	
-	move $t8, $a0
-	li	$v0, 4			
-	la	$a0, newline 
-	syscall	
+	#move $t8, $a0
+	#li	$v0, 4			
+	#la	$a0, newline 
+	#syscall	
 	
-	li $v0, 11
-	move $a0, $t8
-	syscall
+	#li $v0, 11
+	#move $a0, $t8
+	#syscall
 	
-	li	$v0, 4			
-	la	$a0, pushingToStack 
-	syscall	
+	#li	$v0, 4			
+	#la	$a0, pushingToStack 
+	#syscall	
 	
 	
 	jr $ra
