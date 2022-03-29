@@ -10,7 +10,7 @@ stickIsNotEmpty: .asciiz " stack is NOT empty"
 beingAppended: .asciiz " is being appended "
 newline: .asciiz "\n"
 postfixExpressionMessage: .asciiz "postfix expression: "
-firstPrompt: .asciiz "enter an expression: \n"
+firstPrompt: .asciiz "Expression to be evaluated: \n"
 isThree: .asciiz "its a three!!!   "
 isOperatorMessage: .asciiz " is an operator"
 isPlusOperator: .asciiz " found a +\n"
@@ -24,9 +24,10 @@ plusSign: .byte '+'
 minusSign: .byte '-'
 emptyStackSentinel: .word 'E'
 finishLine: .asciiz "finish line woo!"
-resultofoperationmessage: .asciiz " resulted from operation \n"
+resultofoperationmessage: .asciiz " result of operation "
 firstnumis: .asciiz " is first number \n"
 secondnumis: .asciiz " is second number \n"
+equalCharacter: .asciiz "="
 bracket: .asciiz " )"
 	.text
 	.globl main
@@ -213,14 +214,19 @@ AfterParseLoop:
 output:
 		
 		#print postfix message
-		li	$v0, 4			
-		la	$a0, postfixExpressionMessage 
-		syscall
+		#li	$v0, 4			
+		#la	$a0, postfixExpressionMessage 
+		#syscall
 		
 		#print the postfix expression	
 		li, $v0, 4
 		la $a0, outputExpression
 		syscall
+		
+		#li	$v0, 4			
+		#la	$a0, newline 
+		#syscall
+
 	
 EvaluateExpression:	
 	#reset index to zero
@@ -239,18 +245,18 @@ evaluateLoop:
 		lb	$t4, 0($t3)		# load a byte at a time according to counter								
 		beqz	$t4, EndOfProgram
 
-		li	$v0, 4			
-		la	$a0, newline 
-		syscall
+		#li	$v0, 4			
+		#la	$a0, newline 
+		#syscall
 
 		#print the current element
-		li $v0, 11
-		move $a0, $t4
-		syscall
+		#li $v0, 11
+		#move $a0, $t4
+		#syscall
 		
-		li	$v0, 4			
-		la	$a0, bracket
-		syscall
+		#li	$v0, 4			
+		#la	$a0, bracket
+		#syscall
 		
 		
 		
@@ -269,9 +275,9 @@ evaluateLoop:
 		j iterate2
 
 		isPlus:
-			li	$v0, 4			
-			la	$a0, isPlusOperator 
-			syscall	
+		#	li	$v0, 4			
+		#	la	$a0, isPlusOperator 
+		#	syscall	
 			
 			#stack pop =$t6
 			addi $t6, $zero, 0
@@ -279,12 +285,12 @@ evaluateLoop:
 			move $t6, $v0
 			
 			#printline messages
-			li $v0, 11
-			move $a0, $t6
-			syscall
-			li	$v0, 4			
-			la	$a0, secondnumis 
-			syscall	
+		#	li $v0, 11
+		#	move $a0, $t6
+		#	syscall
+		#	li	$v0, 4			
+		#	la	$a0, secondnumis 
+		#	syscall	
 			
 			#stack pop =$t5
 			addi $t5, $zero, 0
@@ -292,25 +298,25 @@ evaluateLoop:
 			move $t5, $v0
 			
 			#printline messages
-			li $v0, 11
-			move $a0, $t5
-			syscall
-			li	$v0, 4			
-			la	$a0, firstnumis 
-			syscall	
+		#	li $v0, 11
+		#	move $a0, $t5
+		#	syscall
+		#	li	$v0, 4			
+		#	la	$a0, firstnumis 
+		#	syscall	
 			
 			# $t7=$t5+$t6
 			addi $t7, $zero, 0
 			add $t7, $t5, $t6
 			
 			#print the result
-			li $v0, 1
-			move $a0, $t7
-			syscall
+		#	li $v0, 1
+		#	move $a0, $t7
+		#	syscall
 		
-			li	$v0, 4			
-			la	$a0, resultofoperationmessage 
-			syscall
+			#li	$v0, 4			
+			#la	$a0, resultofoperationmessage 
+			#syscall
 			
 			#push $t7(result) to stack
 			addi $a0, $zero, 0
@@ -319,9 +325,9 @@ evaluateLoop:
 			
 			j iterate2
 		isMinus:
-			li	$v0, 4			
-			la	$a0, isMinusOperator 
-			syscall	
+			#li	$v0, 4			
+			#la	$a0, isMinusOperator 
+			#syscall	
 			
 			#stack pop =$t6
 			addi $t6, $zero, 0
@@ -329,12 +335,12 @@ evaluateLoop:
 			move $t6, $v0
 			
 			#printline messages
-			li $v0, 11
-			move $a0, $t6
-			syscall
-			li	$v0, 4			
-			la	$a0, secondnumis 
-			syscall	
+			#li $v0, 11
+			#move $a0, $t6
+			#syscall
+			#li	$v0, 4			
+			#la	$a0, secondnumis 
+			#syscall	
 			
 			#stack pop =$t5
 			addi $t5, $zero, 0
@@ -342,25 +348,23 @@ evaluateLoop:
 			move $t5, $v0
 			
 			#printline messages
-			li $v0, 11
-			move $a0, $t5
-			syscall
-			li	$v0, 4			
-			la	$a0, firstnumis 
-			syscall	
+			#li $v0, 11
+			#move $a0, $t5
+			#syscall
+			#li	$v0, 4			
+			#la	$a0, firstnumis 
+			#syscall	
 			
 			# $t7=$t5-$t6
 			addi $t7, $zero, 0
 			sub $t7, $t5, $t6
 			
 			#print the result
-			li $v0, 1
-			move $a0, $t7
-			syscall
+			#li $v0, 1
+			#move $a0, $t7
+			#syscall
 		
-			li	$v0, 4			
-			la	$a0, resultofoperationmessage 
-			syscall
+			
 			
 			#push $t7(result) to stack
 			addi $a0, $zero, 0
@@ -375,9 +379,9 @@ evaluateLoop:
 			#subtract 48
 			addi $t4, $t4, -48
 			
-			li	$v0, 1			
-			la	$a0, isNumberMessage 
-			syscall		
+			#li	$v0, 1			
+			#la	$a0, isNumberMessage 
+			#syscall		
 			
 			
 			#push it onto stack
@@ -406,17 +410,25 @@ evaluateLoop:
 
 EndOfProgram:	
 		
-		li	$v0, 4			
-		la	$a0, newline 
-		syscall
+		#li	$v0, 4			
+		#la	$a0, newline 
+		#syscall
+		
+		
+		#li	$v0, 4			
+		#la	$a0, resultofoperationmessage 
+		#syscall
 		
 		li	$v0, 4			
-		la	$a0, emptyingstackmessage
+		la	$a0, equalCharacter 
 		syscall
 		
-		li	$v0, 4			
-		la	$a0, newline 
-		syscall
+		
+		#li	$v0, 4			
+		#la	$a0, newline 
+		#syscall
+		
+		
 	emptyTheStack2:
 		
 		addi $s3, $zero, 0
@@ -433,9 +445,9 @@ EndOfProgram:
 			move $a0, $t9
 			syscall
 			
-			li	$v0, 4			
-			la	$a0, newline 
-			syscall
+			#li	$v0, 4			
+			#la	$a0, newline 
+			#syscall
 			
 			j emptyTheStack2		 
 
@@ -459,14 +471,14 @@ EndOfProgram:
 		
 		
 		#newline
-		li	$v0, 4			
-		la	$a0, newline 
-		syscall	
+		#li	$v0, 4			
+		#la	$a0, newline 
+		#syscall	
 		
 		#finish line
-		li	$v0, 4			
-		la	$a0, finishLine		
-		syscall
+		#li	$v0, 4			
+		#la	$a0, finishLine		
+		#syscall
 		
 		# exit()
 		li	$v0, 10			
