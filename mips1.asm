@@ -1,46 +1,26 @@
-
-	.data
+#Jesse Clegg 404 Project 2, Spring 2022
+.data
 input:	.space	256
 outputExpression: .space 256
-pushingToStack: .asciiz " ] is getting pushed to stack \n"
-poppingFromStack: .asciiz " is popped from stack \n"
-peakingFromStack: .asciiz " peeking from stack"
-stackIsEmptyMessage: .asciiz " stack is empty"
-stickIsNotEmpty: .asciiz " stack is NOT empty"
-beingAppended: .asciiz " is being appended "
 newline: .asciiz "\n"
-postfixExpressionMessage: .asciiz "postfix expression: "
 firstPrompt: .asciiz "Expression to be evaluated: \n"
-isThree: .asciiz "its a three!!!   "
-isOperatorMessage: .asciiz " is an operator"
-isPlusOperator: .asciiz " found a +\n"
-isMinusOperator: .asciiz " found a -\n"
-isOpenParen: .asciiz " found (\n"
-isClosedParen: .asciiz " found )\n"
-isNumberMessage: .asciiz " is a number"
-emptyingstackmessage: .asciiz "NOW EMPYTING THE STACK...\n"
-sizeOf: .asciiz "expression has size of : "
-plusSign: .byte '+'
-minusSign: .byte '-'
 emptyStackSentinel: .word 'E'
-finishLine: .asciiz "finish line woo!"
-resultofoperationmessage: .asciiz " result of operation "
-firstnumis: .asciiz " is first number \n"
-secondnumis: .asciiz " is second number \n"
 equalCharacter: .asciiz "="
-bracket: .asciiz " )"
-	.text
-	.globl main
+
+.text
+
+.globl main
 main:
 
-ScanUserinput:
-	#clear some registers
+#state 1==input
+scanUserinput:
+	#clear some registers to be safe
 	#will use $s0 as an index for appending to string
 	addi $s0, $zero, 0
 	add $t1, $zero, 0
 	addi $t8, $zero, 0
 	
-	#put our sentinel onto the stack for isEmpty()
+	#put our sentinel 'E' onto the stack for isEmpty()
 	lw $t1, emptyStackSentinel($zero)
 	addi $a0, $zero, 0
 	move $a0, $t1
@@ -56,17 +36,17 @@ ScanUserinput:
 	la	$a0, firstPrompt
 	syscall
 	
-	#read in expression, stored into input, max size=  256 chars/bytes
+	#read in expression, stored into input, max size= 256 chars/bytes
 	li	$v0, 8			 
 	la	$a0, input		
 	li	$a1, 256		
 	syscall
 	
-	#keep track of start of input string
+	#keep track of the start address of input string
 	la $t2, input
 	
-	
-parseExpression:
+#state 2==convert-to-postfix	
+convertToPostfix:
 	#clear some registers
 	li	$t0, 0			
 	li	$t3, 0			
@@ -77,8 +57,9 @@ parseExpression:
 		# $t3 is i=0
 		add	$t3, $t2, $t0		# $t2 is the base address for our 'input' array, add loop index
 		lb	$t4, 0($t3)		# load a byte at a time according to counter								
-		beqz	$t4, AfterParseLoop		# We found the end of the expression (null-byte)
+	beqz	$t4, emptyTheStack		# We found the end of the expression (null-byte)
 		
+		#switch case for current character of expression
 		beq $t4, '+' isPlusOrMinus
 		beq $t4, '-' isPlusOrMinus
 		beq $t4, '(' openParen
@@ -147,11 +128,11 @@ parseExpression:
 		 
 			closedParenLoop:	
 				#pop everything from stack until a closed parenthesis
-				#need to make a loop here
 				addi $t6, $zero, 0
 				jal stackPeek
 				move $t6, $v0
 				
+					#stop popping when we find the matching '('
 					beq $t6, '(' matchingParenFound
 						addi $t8, $zero, 0
 			
@@ -169,27 +150,26 @@ parseExpression:
 					j closedParenLoop
 					
 			matchingParenFound:
-				#pop it to get rid of the '('
+				#pop stack to get rid of the '('
 				jal stackPop
 				j loopWork
 		
 		
 	loopWork:
-		addi	$t0, $t0, 1		# Advance our counter (i++)
-		j	parserLoop		# Loop until we reach our condition
+		addi	$t0, $t0, 1		# increment by size of a byte
+		j	parserLoop		# Loop until end of expression
 	
-
-
-AfterParseLoop:
-	#pop any remaining operators on the stock and append to postfix expression
-	emptyTheStack:
+	
+emptyTheStack:
 		
+		#check if stack is empty
 		addi $s3, $zero, 0
 		jal stackIsEmpty
 		move $s3, $v0	
 		
+		#pop any remaining operators on the stock and append to postfix expression
 		beq $s3, 1 stackIsEmptied		
-		
+			
 			jal stackPop
 			addi $t9, $zero, 0
 			addi $t9, $v0, 0
@@ -200,37 +180,20 @@ AfterParseLoop:
 
 
 	stackIsEmptied:
-	
-		
-	
+		#append last value popped from stack to the postfix expression
 		addi $t9, $zero, 0
 		addi $t9, $zero, 7
 		sb $t9, outputExpression($s0)
 		addi $s0, $s0, 1
 		
-		
-		
-		
-output:
-		
-		#print postfix message
-		#li	$v0, 4			
-		#la	$a0, postfixExpressionMessage 
-		#syscall
-		
-		#print the postfix expression	
-		li, $v0, 4
-		la $a0, outputExpression
-		syscall
-		
-		#li	$v0, 4			
-		#la	$a0, newline 
-		#syscall
 
-	
+		
+#state 3==evaluate	
 EvaluateExpression:	
-	#reset index to zero
+	#reset index i to zero
 	addi $s0, $zero, 0
+	
+	#clear out $t2 and use it to store start of outputExpression
 	addi $t2, $zero, 0
 	la $t2, outputExpression
 
@@ -238,28 +201,16 @@ EvaluateExpression:
 	li	$t3, 0	
 	li	$t4, 0
 
+	evaluateLoop:
+		#$t3 is base address of output string plus loop counter $t0 which is incremented each iteration
+		add	$t3, $t2, $t0		
+		
+		# load current byte of the postfix into $t4	
+		lb	$t4, 0($t3)								
 	
-evaluateLoop:
-	# $t3 is i=0
-		add	$t3, $t2, $t0		# $t2 is the base address for our 'input' array, add loop index
-		lb	$t4, 0($t3)		# load a byte at a time according to counter								
-		beqz	$t4, EndOfProgram
-
-		#li	$v0, 4			
-		#la	$a0, newline 
-		#syscall
-
-		#print the current element
-		#li $v0, 11
-		#move $a0, $t4
-		#syscall
-		
-		#li	$v0, 4			
-		#la	$a0, bracket
-		#syscall
-		
-		
-		
+	#if we reach end of expression($t4==0), we are done evaluating
+	beqz $t4, output
+		#switch case for current character of expression
 		beq $t4, '+' isPlus
 		beq $t4, '-' isMinus
 		beq $t4, '0' isOperand
@@ -275,167 +226,87 @@ evaluateLoop:
 		j iterate2
 
 		isPlus:
-		#	li	$v0, 4			
-		#	la	$a0, isPlusOperator 
-		#	syscall	
-			
 			#stack pop =$t6
 			addi $t6, $zero, 0
 			jal stackPop
 			move $t6, $v0
 			
-			#printline messages
-		#	li $v0, 11
-		#	move $a0, $t6
-		#	syscall
-		#	li	$v0, 4			
-		#	la	$a0, secondnumis 
-		#	syscall	
-			
 			#stack pop =$t5
 			addi $t5, $zero, 0
 			jal stackPop
 			move $t5, $v0
-			
-			#printline messages
-		#	li $v0, 11
-		#	move $a0, $t5
-		#	syscall
-		#	li	$v0, 4			
-		#	la	$a0, firstnumis 
-		#	syscall	
 			
 			# $t7=$t5+$t6
 			addi $t7, $zero, 0
 			add $t7, $t5, $t6
-			
-			#print the result
-		#	li $v0, 1
-		#	move $a0, $t7
-		#	syscall
 		
-			#li	$v0, 4			
-			#la	$a0, resultofoperationmessage 
-			#syscall
-			
 			#push $t7(result) to stack
 			addi $a0, $zero, 0
 			move $a0, $t7
-			jal stackPush
+			
+			jal stackPush	
 			
 			j iterate2
+		
 		isMinus:
-			#li	$v0, 4			
-			#la	$a0, isMinusOperator 
-			#syscall	
-			
 			#stack pop =$t6
 			addi $t6, $zero, 0
 			jal stackPop
-			move $t6, $v0
-			
-			#printline messages
-			#li $v0, 11
-			#move $a0, $t6
-			#syscall
-			#li	$v0, 4			
-			#la	$a0, secondnumis 
-			#syscall	
+			move $t6, $v0	
 			
 			#stack pop =$t5
 			addi $t5, $zero, 0
 			jal stackPop
-			move $t5, $v0
-			
-			#printline messages
-			#li $v0, 11
-			#move $a0, $t5
-			#syscall
-			#li	$v0, 4			
-			#la	$a0, firstnumis 
-			#syscall	
+			move $t5, $v0	
 			
 			# $t7=$t5-$t6
 			addi $t7, $zero, 0
 			sub $t7, $t5, $t6
 			
-			#print the result
-			#li $v0, 1
-			#move $a0, $t7
-			#syscall
-		
-			
-			
 			#push $t7(result) to stack
 			addi $a0, $zero, 0
 			move $a0, $t7
 			jal stackPush
-			
 			j iterate2
 		
-		#is a number
 		isOperand:
-
-			#subtract 48
+			#subtract 48 to convert from ascii to an integer
 			addi $t4, $t4, -48
 			
-			#li	$v0, 1			
-			#la	$a0, isNumberMessage 
-			#syscall		
-			
-			
-			#push it onto stack
+			#push integer value onto stack
 			addi $a0, $zero, 0
 			move $a0, $t4
 			jal stackPush
 
-		
-
 			j iterate2
-		
-		
-		
+			
 	iterate2:
-		addi	$t0, $t0, 1		# Advance our counter (i++)
-		j	evaluateLoop
+		#increment index $t0 by one byte
+		addi	$t0, $t0, 1		
+		j evaluateLoop
 
 
-
-
-
-
-
-
-
-
-EndOfProgram:	
 		
-		#li	$v0, 4			
-		#la	$a0, newline 
-		#syscall
+#state 4==output		
+output:
 		
+		#print the postfix expression	
+		li, $v0, 4
+		la $a0, outputExpression
+		syscall
 		
-		#li	$v0, 4			
-		#la	$a0, resultofoperationmessage 
-		#syscall
-		
+		#prints '='
 		li	$v0, 4			
 		la	$a0, equalCharacter 
 		syscall
-		
-		
-		#li	$v0, 4			
-		#la	$a0, newline 
-		#syscall
-		
-		
+	#solution should be on top of the stack	
 	emptyTheStack2:
 		
 		addi $s3, $zero, 0
 		jal stackIsEmpty
 		move $s3, $v0	
 		
-		beq $s3, 1 stackIsEmptied2		
+		beq $s3, 1 endOfProgram		
 		
 			jal stackPop
 			addi $t9, $zero, 0
@@ -445,110 +316,61 @@ EndOfProgram:
 			move $a0, $t9
 			syscall
 			
-			#li	$v0, 4			
-			#la	$a0, newline 
-			#syscall
-			
 			j emptyTheStack2		 
 
 
-	stackIsEmptied2:
-		
-		
-		
-		
-		
-		
-		
-		
-		
-		
-		
-		
-		
-		
-		
-		
-		
-		#newline
-		#li	$v0, 4			
-		#la	$a0, newline 
-		#syscall	
-		
-		#finish line
-		#li	$v0, 4			
-		#la	$a0, finishLine		
-		#syscall
-		
-		# exit()
-		li	$v0, 10			
-		syscall
-#####################################################################################################################	
+endOfProgram:
+	# exit program
+	li	$v0, 10			
+	syscall
+
+#modular helper methods below
 stackPush:
-	#move stack pointer
+	#move stack pointer by size of a word
 	addi $sp, $sp, -4
 	sw $a0, 0($sp) #push to stack	
-	
-	
-	#move $t8, $a0
-	#li	$v0, 4			
-	#la	$a0, newline 
-	#syscall	
-	
-	#li $v0, 11
-	#move $a0, $t8
-	#syscall
-	
-	#li	$v0, 4			
-	#la	$a0, pushingToStack 
-	#syscall	
-	
 	
 	jr $ra
 	
 stackPop:
+	#load word on top of stack into $t9
 	addi $t9, $zero, 0
 	lw $t9, 0($sp)
 	
 	#move stack pointer
 	addi $sp, $sp, 4
 	
+	#return this value in $v0
 	addi $v0, $zero, 0
 	move $v0, $t9
 	jr $ra
 	
 stackPeek:
+	#load word on top of stack into $t9
 	addi $t9, $zero, 0
 	lw $t9, 0($sp)
 	
+	#return this value in $v0
 	addi $v0, $zero, 0
 	move $v0, $t9
 	jr $ra
 	
 stackIsEmpty:
+	#load word on top of stack into $t9
 	addi $t9, $zero, 0
 	lw $t9, 0($sp)
 	
+	#load the sentinel value 'E' which indicates an empty stack into $t8
 	addi $t8, $zero, 0
 	lw $t8, emptyStackSentinel($zero)
 	
+	#If our sentinel value is on top of the stack, 
+	#then this stack is empty(return 1), 
+	#else it is not(return 0)
 	beq $t9, $t8 empty
 		addi $v0, $zero, 0
 		jr $ra
 	empty:
 	 	addi $v0, $zero, 1
 	 	jr $ra
-	 
-appendToExpression:
-	addi $t9, $zero, 0
-	move $t9, $a0
-	sw $t9, outputExpression($s0)
-	syscall		
-	
-	
-	#dont need this?
-	#increment the index we are at for main	
-	addi $s0, $s0, 1
-	jr $ra
-
-		
+	 	
